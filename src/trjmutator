@@ -236,9 +236,9 @@ else
 fi
 
 ### Run checks
+checkgmxdependencies
 if [ $checks == "ON" ]
     then
-    checkgmxdependencies
     checkispdb $2
     checkisxtc $1
     checkxtcandpdbatoms $1 $2
