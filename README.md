@@ -47,6 +47,10 @@ Generates
 * an xtc file (new_compiled.xtc) - this is the .xtc file with the replaced residue
 * a pdb file (new\_compiled_start.pdb) - this is the PDB file associated with the first frame of the .xtc file
 
+About
+------
+
+This code was written by Alex Holehouse as part of the [Pappu Lab](http://pappulab.wustl.edu/). For more information contact alex.holehouse@wustl.edu. For bug fixes please file a pull request.
 
     
 
