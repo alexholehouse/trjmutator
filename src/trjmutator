@@ -283,3 +283,5 @@ trjcat -f trjmut_frame* -o ../new_compiled.xtc
 
 # write a new start trajectory file
 cp trjmut_frame0.pdb ../new_compiled_start.pdb
+
+rm -r outframes
