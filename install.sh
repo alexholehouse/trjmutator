@@ -14,7 +14,8 @@
 ##
 ##     bash install.sh user # will run without being root
 ##
-##     bash install         # requires root  
+##     bash install         # requires root (i.e. should be 
+##                          # `sudo bash install`
 ##
 
 
@@ -23,11 +24,29 @@ INSTALL_DIR="/usr/lib/trjmutator"
 BINARY_LINK="/usr/bin/trjmutator"
 ###########################################
 
+if [ "$#" -gt  "1" ]
+then
+    echo ""
+    echo " Install script takes only a single argument (-u, to define userspace installation)"
+    echo " To define where installation should occurr please edit the instal.sh file"
+    echo ""
+    echo " Exiting..."
+    echo ""
+    exit 1
+fi
 
 
-if [ "$UID" -ne 0 ] && [ "$1" -ne "user" ]
-  then echo "ERROR: Please run as root"
-  exit
+if [ "$#" -gt "0" ]
+then
+    arg1=$1
+else
+    arg1="nope"
+fi
+
+if [ "$UID" -ne 0 ] && [ $arg1 != "user" ]
+then 
+    echo "ERROR: Please run as root"
+    exit
 fi
 
 echo "--------------------------------------------"
