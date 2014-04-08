@@ -1,0 +1,285 @@
+#!/bin/bash
+
+
+
+
+
+# Section 1
+######################################################################
+######################################################################
+#### I/O interactive functions
+####
+####
+
+welcomemessage() {
+    echo "########################################################"
+    echo "#                                                      #"
+    echo "#                 TRJMUTATOR (v0.1)                    #"    
+    echo "#                                                      #"
+    echo "########################################################"
+    echo
+    date
+    echo
+    echo "########################################################"
+}
+
+endmessage() {
+    echo "########################################################"
+    echo "#              TRJMUTATOR COMPLETE                     # "
+    echo "########################################################"
+}
+    
+infomessage() {
+    echo " TRJMUTATOR allows you to mutate a single residue in a "
+    echo " .xtc compressed trajectory file to a Glycine residue  "
+    echo " using forcefield optimized bond correction.           "
+    echo " This trajectory can then be analyzed using CAMPARI    "
+    echo " and compared to the original trajectory               "
+}
+
+
+# Section 2
+######################################################################
+######################################################################
+#### Consistency checking functions
+####
+#### 
+
+checkprogram() {    
+    ## Generic function which checks if a program ($1)
+    ## is in the current PATH and exist with error and 
+    ## warning if not.
+    #
+    # Takes 1 argument ($1) = program expected to be in
+    # path.
+    #
+    # Gives no output unless the program is not available
+    # in which case an error message is printed and the
+    # function aborts with a 1 error.
+    
+
+    which $1 > /dev/null
+    if [ $? == 1 ]
+    then
+	echo "ERROR: $1 not in current PATH. Aborting..."
+	exit 1
+    fi
+}
+
+checkgmxdependencies() {
+    ## Function to check the dependencies of a bunch of
+    ## Gromacs programs    
+    #
+    # No input
+    #
+    # No output unless one of them fails, in which case
+    # and error message is printed an the program exits
+    # with error status (1)
+
+    checkprogram trjcat
+    checkprogram trjconv
+    checkprogram gmxdump
+}
+
+checkispdb() {
+    ## Function to check if a PDB file really looks to be a legitimate
+    ## PDB file. Useful for debugging if things go wrong.
+    #
+    # Takes one input ($1) - expected to be a PDB file
+    #
+    # Prints the number of atoms in the PDB file, and if that number
+    # is less than 50 then a WARNING is printed but the program does not 
+    # exit
+    
+    # finds the number of time the workd ATOM (case insensitive
+    # actually...) appears in the first column of the first argument
+
+    numatoms=`awk '{ print $1 }' $1 | grep -i ATOM | wc -l`
+
+    echo "PDB file $1 contains $numatoms atoms"
+    if [ "$numatoms" -lt "50" ]
+    then
+	echo "WARNING: This low number of atoms suggests this may not be a PDB file"
+    fi
+}
+
+checkisxtc() {
+    ## Function to check if an XTC file really looks to be a legitimate
+    ## XTC file. Built off the gromacs gmxdump program.
+    #
+    # Takes 1 argument ($1) = file which is expected to 
+    # be an XTC file
+    #
+    # Gives no output unless the XTC file cannot be read by gmxdump in 
+    # which case an error is printed and the function aborts
+
+   shouldbeone=`gmxdump -f $1 2>/dev/null| head | grep natoms | wc -l`
+
+   if [ "$shouldbeone" != "1" ]
+   then
+       echo " ERROR: The file $1 does not appear to be a valid .xtc file"
+       echo " This was determined using the command "
+       echo "    gmxdump -f $1"
+       echo " You might want to check this out..."
+       echo " Aborting TRJMUTATOR"
+       exit 1
+   fi
+}
+
+checkxtcandpdbatoms(){
+    ## Function to check if the .xtc and .pdb files have the same number of
+    # atoms in them
+    #
+    # Takes 2 argument - xtc file and pdb file
+    #
+    # Gives no output unless there is atomic discrepancy, in which case the
+    # discrepancy is printed and the program exits with error status (1)
+    
+    xtcatoms=`gmxdump -f $1 2>/dev/null| head | grep natoms | awk '{ print $2 }'`
+    pdbatoms=`awk '{ print $1 }' $2 | grep -i ATOM | wc | awk '{ print $1 }'`
+
+    if [ "$xtcatoms" != "$pdbatoms" ]
+    then
+	echo "ERROR: Unequal number of atoms in .xtc and .pdb files"
+	echo ".xtc file has $xtcatoms"
+	echo ".pdb file has $pdbatoms"
+	echo "Aborting..."
+	exit 1
+    fi
+}
+    
+
+# ARGS
+
+welcomemessage
+
+if [ $# -lt '3' ] 
+then
+    echo " Please include at a minimum three arguments"
+    echo " (.xtc file, .pdb file, residue to convert)"
+    echo ""
+    echo " e.g. trjmutator md.xtc start.pdb 10"
+    endmessage
+    exit 0
+fi
+
+
+if [ $# == 3 ]
+then
+    
+    echo " trjmutator running for entire trajectory"
+    echo " Arguments are as follows"
+    echo ""
+    echo " ------------------------------------"
+    echo " .xtc file:          $1"
+    echo " .pdb file:          $2"
+    echo " Residue to mutate:  $3"
+    echo " Checks:             [ON]"
+    echo " ------------------------------------"
+    checks="ON"
+elif [ $# == 4 ]
+then
+
+    if [ $4 == "-f" ]
+    then
+	echo " trjmutator running on a trajectory subsection"
+	echo " Arguments are as follows"
+	echo ""
+	echo " .xtc file:            $1"
+	echo " .pdb file:            $2"
+	echo " Residue to mutate:    $3"
+	echo " Checks                [OFF]"	
+	checks="OFF"
+    else
+	echo "Fourth argument was not -f (checks off) unable to process"
+	exit 1
+    fi	
+elif [ $# == 5 ]
+then
+
+    echo " trjmutator running on a trajectory subsection"
+    echo " Arguments are as follows"
+    echo ""
+    echo " .xtc file:            $1"
+    echo " .pdb file:            $2"
+    echo " Residue to mutate:    $3"
+    echo " Start timestamp (ps): $4" 
+    echo " End timestamp (ps):   $5" 
+    echo " Checks:             [ON]"
+    checks="ON"
+elif [ $# == 6 ]
+then
+
+    if [ $6 == "-f" ]
+    then
+	echo " trjmutator running on a trajectory subsection"
+	echo " Arguments are as follows"
+	echo ""
+	echo " .xtc file:            $1"
+	echo " .pdb file:            $2"
+	echo " Residue to mutate:    $3"
+	echo " Start timestamp (ps): $4" 
+	echo " End timestamp (ps):   $5" 
+	echo " Checks                [OFF]"
+	checks="OFF"
+    else:
+	echo "Sixth argument was not -f (checks off) unable to process"
+	exit 1
+    fi	
+else
+    echo "Invalid number of arguments - please use the (position specific)"
+    echo "3 arguments expected - e.g."
+    echo "e.g. trjmutator md.xtc start.pdb 10"
+    echo "Or to only analyze a specific region include start and end times (ps)"
+    echo "e.g. trjmutator md.xtc start.pdb 10 0 100"
+    exit 1
+fi
+
+### Run checks
+if [ $checks == "ON" ]
+    then
+    checkgmxdependencies
+    checkispdb $2
+    checkisxtc $1
+    checkxtcandpdbatoms $1 $2
+fi
+
+## Now lets do some science
+
+if [ -d "outframes" ]
+then
+    rm -r outframes
+fi
+
+mkdir outframes
+    
+if [ "$#" == "3" ] ||  [ "$#" == "4" ] 
+then
+    trjconv -f $1 -o outframes/trjmut_frame.pdb -s $2 -sep 
+    res=$3
+elif [ "$#" == "5" ] ||  [ "$#" == "6" ] 
+then
+    trjconv -f $1 -o outframes/trjmut_frame.pdb -s $2 -sep -b $4 -e $5
+    res=$5
+fi
+
+cd outframes
+
+# for each PDB file in that output frame file run conversion
+
+echo "here"
+
+for i in `ls`
+do
+    python -c "import PDB
+a=PDB.PDB_papputools('$i')
+a.convert_to_glycine($res)
+a.write_file('$i')
+"
+done
+
+# concatinate all the PBD files back together again!
+trjcat -f trjmut_frame* -o ../new_compiled.xtc
+
+# write a new start trajectory file
+cp trjmut_frame0.pdb ../new_compiled_start.pdb
