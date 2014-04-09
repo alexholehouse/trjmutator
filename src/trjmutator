@@ -293,7 +293,7 @@ cp trjmut_frame0.pdb ../new_compiled_start.pdb
 
 echo -e "Deleting temporary files...\c"
 cd ../
-#rm -r outframes
+rm -r outframes
 if [ $? == 0 ]
 then
     echo " [DONE]"
