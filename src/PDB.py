@@ -197,6 +197,10 @@ class PDB_papputools:
         for res in self.residues:            
 
             # res[0][4] gets the id of the 0th atom
+
+            print res[0][4]
+            print resid
+
             if res[0][4] == str(resid):
                 residue_to_switch = res
 

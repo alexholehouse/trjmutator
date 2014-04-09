@@ -27,6 +27,7 @@ endmessage() {
     echo "########################################################"
     echo "#              TRJMUTATOR COMPLETE                     # "
     echo "########################################################"
+    date
 }
     
 infomessage() {
@@ -255,12 +256,18 @@ mkdir outframes
     
 if [ "$#" == "3" ] ||  [ "$#" == "4" ] 
 then
+    # split the file into all pdb files
     trjconv -f $1 -o outframes/trjmut_frame.pdb -s $2 -sep 
+
+    # set the target residue to the third argument
     res=$3
 elif [ "$#" == "5" ] ||  [ "$#" == "6" ] 
 then
+    # split the file between timepoiints $4 and $5 into PBD files
     trjconv -f $1 -o outframes/trjmut_frame.pdb -s $2 -sep -b $4 -e $5
-    res=$5
+
+    # set the residue to the third argument
+    res=$3
 fi
 
 cd outframes
@@ -284,4 +291,15 @@ trjcat -f trjmut_frame* -o ../new_compiled.xtc
 # write a new start trajectory file
 cp trjmut_frame0.pdb ../new_compiled_start.pdb
 
-rm -r outframes
+echo -e "Deleting temporary files...\c"
+cd ../
+#rm -r outframes
+if [ $? == 0 ]
+then
+    echo " [DONE]"
+else
+    echo " [ERROR] - unable to delete temporary files..."
+fi
+
+# print end message and exit yo!
+endmessage
