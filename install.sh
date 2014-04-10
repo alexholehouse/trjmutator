@@ -22,6 +22,25 @@
 ###########################################
 INSTALL_DIR="/usr/lib/trjmutator"         
 BINARY_LINK="/usr/bin/trjmutator"
+
+
+# The Python in Python DIR is only used if
+# the system default Python is not 2.7 or
+# greater - i.e. at runtime trjmutator checks
+# the python version of 
+#
+#  python -V
+#
+# If this is < 2.7 it defaults to the PYTHON_DIR
+# 
+# If the PYTHON_DIR is less than 2.7 it aborts
+#
+# Importantly these checks are run at runtime,
+# which gives you more flexibility over software
+# behaviour
+
+
+PYTHON_DIR="/usr/bin/python"
 ###########################################
 
 if [ "$#" -gt  "1" ]
@@ -78,7 +97,13 @@ cp PDB.py $INSTALL_DIR
 ## as the sed deliniator (here I use ;) which avoids having to
 ## escape "/" in the variable. Pretty nifty!
 
-sed -e "s;import PDB;import os, sys\nlib_path = os.path.abspath('$INSTALL_DIR')\nsys.path.append(lib_path)\nimport PDB;" trjmutator > $INSTALL_DIR/trjmutator
+
+sed -e "s;import PDB;import os, sys\nlib_path = os.path.abspath('$INSTALL_DIR')\nsys.path.append(lib_path)\nimport PDB;" trjmutator > $INSTALL_DIR/trjmutator.tmp
+
+# replace the XXX_FROM_INSTALL_XXX with the defined $PYTHON_DIR above
+sed -e "s;XXX_FROM_INSTALL_XXX;$PYTHON_DIR;" $INSTALL_DIR/trjmutator.tmp > $INSTALL_DIR/trjmutator
+rm $INSTALL_DIR/trjmutator.tmp
+
 chmod 755 $INSTALL_DIR/trjmutator
 
 # create the link

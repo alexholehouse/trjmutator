@@ -39,6 +39,9 @@ infomessage() {
 }
 
 
+echoerr() { echo "$@" 1>&2; }
+
+
 # Section 2
 ######################################################################
 ######################################################################
@@ -149,8 +152,73 @@ checkxtcandpdbatoms(){
     fi
 }
     
+checkpythonversion(){
+    ## Function which echos 0 if the first argument provides the absolute
+    # path to a work 2.7.* verison of Python, else echos 1
+        
+    vertup=`$1 -c 'import sys; print(sys.version_info[:])'`       
 
-# ARGS
+    major=`echo ${vertup:1:1}`
+    minor=`echo ${vertup:3:2}`
+
+    if [ "$major" != "2" ]
+	then
+	echo "1"
+	return
+    fi
+    
+    if [ "$minor" != "7" ]
+	then
+	echo "1"
+	return
+    fi
+
+    echo "0"
+}
+
+
+setpythonversion(){
+
+    echoerr "Dymamically setting python version..."
+
+    default=`which --skip-alias python`
+    
+    # check the default version
+    checkval=`checkpythonversion $default`
+
+    if [ "$checkval" == "0" ]
+    then
+	echo $default	
+	return
+    fi
+
+    # check the alternative from install (note XXX_FROM_INSTALL_XXX
+    # is automatically replaced during the installation process
+    alternative="XXX_FROM_INSTALL_XXX"
+    
+    checkval=`checkpythonversion $alternative`
+
+    if [ "$checkval" == "0" ]	
+    then
+	echo $alternative
+	return 
+    fi
+
+    echoerr "GET HERE?"
+
+    echoerr "Checkval: $checkval"
+
+
+    echoerr "Unable to find a Python 2.7 install on your system"
+    echoerr "Please find one, set the python path in the instal.sh"
+    echoerr "Aborting..."
+    echo "FAIL"
+    return 
+}
+    
+
+
+
 
 welcomemessage
 
@@ -272,13 +340,32 @@ fi
 
 cd outframes
 
+
+# print the python version - useful for debugging
+
+
+echo "####################################################"
+echo "####################################################"
+
+PYTHON=`setpythonversion`
+
+if [ "$PYTHON" == "FAIL" ]
+then
+    exit 1
+fi
+
+echo ""
+echo "#####################################"
+echo    " Python binary path: $PYTHON   "
+echo -e " Python version being used: \c"
+$PYTHON -V 2>&1
+echo "#####################################"
+echo ""
+
 # for each PDB file in that output frame file run conversion
-
-echo "here"
-
 for i in `ls`
 do
-    python -c "import PDB
+    $PYTHON -c "import PDB
 a=PDB.PDB_papputools('$i')
 a.convert_to_glycine($res)
 a.write_file('$i')
