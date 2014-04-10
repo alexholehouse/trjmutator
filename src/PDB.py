@@ -93,7 +93,10 @@ class PDB_papputools:
                     self.header.append(line)
                 # if we're not in the header than must be in the footer yo!
                 else:
+                    if len(temp_res) > 0: 
+                        allres.append(temp_res)
                     self.footer.append(line)                
+
         return allres
             
 
