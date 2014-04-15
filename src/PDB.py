@@ -95,6 +95,7 @@ class PDB_papputools:
                 else:
                     if len(temp_res) > 0: 
                         allres.append(temp_res)
+                        temp_res = []
                     self.footer.append(line)                
 
         return allres
